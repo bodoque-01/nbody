@@ -98,7 +98,7 @@ int main(void)
                     Vector2 acceleration_j = Vector2Scale(force, -1.0f / (float)bodies[j].mass);
                     
 
-                    // PE  = -G * mᵢ * mⱼ / dist 
+                    // PE  = -G * mᵢ * mⱼ / distSqr
                     accelerations[i] = Vector2Add(accelerations[i], acceleration_i);
                     accelerations[j] = Vector2Add(accelerations[j], acceleration_j);
                     PE += (-gravitational_constant * bodies[i].mass * bodies[j].mass) / distSqr;
