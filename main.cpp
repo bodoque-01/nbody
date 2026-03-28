@@ -70,9 +70,6 @@ int main(void)
     // Main game loop
     while (!WindowShouldClose())
     {
-        KE = 0;
-        PE = 0;
-        E = 0;
         if (IsKeyPressed(KEY_SPACE)) {
             isPaused = !isPaused;
         }
@@ -83,12 +80,15 @@ int main(void)
         if (!isPaused) {
             Vector2 accelerations[N] = {};
             const float dt = GetFrameTime();
+            KE = 0;
+            PE = 0;
+            E = 0;
 
             for (int i = 0; i < N; i++) {
                 for (int j = i + 1; j < N; j++) {
                     Vector2 r = Vector2Subtract(bodies[j].position, bodies[i].position);
                     float distSqr = Vector2LengthSqr(r);
-                    //if (distSqr <= 0.0001f) continue;
+                    if (distSqr <= 0.0001f) continue;
 
                     double forceMagnitude = (bodies[i].mass * bodies[j].mass * gravitational_constant) / distSqr;
                     Vector2 r_norm = Vector2Normalize(r);
@@ -130,7 +130,7 @@ int main(void)
                 DrawText(TextFormat("E:  %.2f", E),  20, 68, 20, YELLOW);
             }
             if (isPaused) {
-                DrawText("PAUSED", 20, 20, 30, WHITE);
+                DrawText("PAUSED", screenWidth/2, 20, 30, WHITE);
             }
 
         EndDrawing();
