@@ -67,6 +67,9 @@ int main(void)
     double KE = 0;
     double PE = 0;
     double E = KE + PE;
+    const float fixedDt = 1.0f / 240.0f;
+    const int maxSubstepsPerFrame = 8;
+    float accumulator = 0.0f;
     // Main game loop
     while (!WindowShouldClose())
     {
@@ -78,39 +81,45 @@ int main(void)
             // calculate acceleration for body
             // change velocity of body.
         if (!isPaused) {
-            Vector2 accelerations[N] = {};
-            const float dt = GetFrameTime();
-            KE = 0;
-            PE = 0;
-            E = 0;
+            accumulator += GetFrameTime();
+            int stepsTaken = 0;
 
-            for (int i = 0; i < N; i++) {
-                for (int j = i + 1; j < N; j++) {
-                    Vector2 r = Vector2Subtract(bodies[j].position, bodies[i].position);
-                    float distSqr = Vector2LengthSqr(r);
-                    if (distSqr <= 0.0001f) continue;
+            while (accumulator >= fixedDt && stepsTaken < maxSubstepsPerFrame) {
+                Vector2 accelerations[N] = {};
+                KE = 0;
+                PE = 0;
+                E = 0;
 
-                    double forceMagnitude = (bodies[i].mass * bodies[j].mass * gravitational_constant) / distSqr;
-                    Vector2 r_norm = Vector2Normalize(r);
-                    Vector2 force = Vector2Scale(r_norm, (float)forceMagnitude);
+                for (int i = 0; i < N; i++) {
+                    for (int j = i + 1; j < N; j++) {
+                        Vector2 r = Vector2Subtract(bodies[j].position, bodies[i].position);
+                        float distSqr = Vector2LengthSqr(r);
+                        if (distSqr <= 0.0001f) continue;
 
-                    Vector2 acceleration_i = Vector2Scale(force, 1.0f / (float)bodies[i].mass);
-                    Vector2 acceleration_j = Vector2Scale(force, -1.0f / (float)bodies[j].mass);
-                    
+                        float dist = sqrtf(distSqr);
+                        double forceMagnitude = (bodies[i].mass * bodies[j].mass * gravitational_constant) / distSqr;
+                        Vector2 r_norm = Vector2Scale(r, 1.0f / dist);
+                        Vector2 force = Vector2Scale(r_norm, (float)forceMagnitude);
 
-                    // PE  = -G * mᵢ * mⱼ / distSqr
-                    accelerations[i] = Vector2Add(accelerations[i], acceleration_i);
-                    accelerations[j] = Vector2Add(accelerations[j], acceleration_j);
-                    PE += (-gravitational_constant * bodies[i].mass * bodies[j].mass) / distSqr;
+                        Vector2 acceleration_i = Vector2Scale(force, 1.0f / (float)bodies[i].mass);
+                        Vector2 acceleration_j = Vector2Scale(force, -1.0f / (float)bodies[j].mass);
+
+                        accelerations[i] = Vector2Add(accelerations[i], acceleration_i);
+                        accelerations[j] = Vector2Add(accelerations[j], acceleration_j);
+                        PE += (-gravitational_constant * bodies[i].mass * bodies[j].mass) / dist;
+                    }
+                    KE += 0.5 * bodies[i].mass * pow(Vector2Length(bodies[i].velocity), 2);
                 }
-                KE += 0.5 * bodies[i].mass * pow(Vector2Length(bodies[i].velocity), 2);
-            }
-            E = KE + PE;
+                E = KE + PE;
 
-            for (int i = 0; i < N; i++) {
-                positionHistory[i].push(Vector2{bodies[i].position.x, bodies[i].position.y});
-                bodies[i].velocity = Vector2Add(bodies[i].velocity, Vector2Scale(accelerations[i], dt));
-                bodies[i].position = Vector2Add(bodies[i].position, Vector2Scale(bodies[i].velocity, dt));
+                for (int i = 0; i < N; i++) {
+                    positionHistory[i].push(Vector2{bodies[i].position.x, bodies[i].position.y});
+                    bodies[i].velocity = Vector2Add(bodies[i].velocity, Vector2Scale(accelerations[i], fixedDt));
+                    bodies[i].position = Vector2Add(bodies[i].position, Vector2Scale(bodies[i].velocity, fixedDt));
+                }
+
+                accumulator -= fixedDt;
+                stepsTaken++;
             }
         }
 
