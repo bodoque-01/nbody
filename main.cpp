@@ -15,7 +15,6 @@ int main(void)
 {
     bool isPaused = false;
     // Initialization
-    //--------------------------------------------------------------------------------------
     const int screenWidth = 1520;
     const int screenHeight = 1080;
     const double gravitational_constant = 10000.;
