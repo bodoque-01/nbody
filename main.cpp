@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include <cmath>
+#include <omp.h>
 #include "circular_buffer.h"
 
 struct planet {
