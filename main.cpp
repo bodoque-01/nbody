@@ -25,43 +25,34 @@ int main(void)
     SetTargetFPS(60); // Set our game to run at 60 frames-per-second
 
     const int N = 6;
-    planet sun = {Vector2{screenWidth/2,screenHeight/2}, 10000, Vector2{0, 0}, 15};
-    //Set initial earth velocity to v = sqrt(G * m_sun / r), in some perpendicular direction to the sun (initial conditions, derivation is just equaling centripetal force to gravitational force).
-    double distance = Vector2Distance(sun.position, Vector2{screenWidth/4, screenHeight/2});
-    double initial_velocity = sqrt(gravitational_constant * sun.mass / distance);
-    Vector2 initial_velocity_vector = Vector2{0,-initial_velocity};
 
-    double distance2 = Vector2Distance(sun.position, Vector2{screenWidth/4, screenHeight/4});
-    double initial_velocity2 = sqrt(gravitational_constant * sun.mass / distance2);
-    Vector2 initial_velocity_vector2 = Vector2{0,-initial_velocity2};
-
-    double distance3 = Vector2Distance(sun.position, Vector2{3 * screenWidth/4, screenHeight/2});
-    double initial_velocity3 = sqrt(gravitational_constant * sun.mass / distance3);
-    Vector2 initial_velocity_vector3 = Vector2{0,initial_velocity3};
-
-    double distance4 = Vector2Distance(sun.position, Vector2{screenWidth/2, screenHeight/4});
-    double initial_velocity4 = sqrt(gravitational_constant * sun.mass / distance4);
-    Vector2 initial_velocity_vector4 = Vector2{initial_velocity4, 0};
-
-    double distance5 = Vector2Distance(sun.position, Vector2{screenWidth/2, 3 * screenHeight/4});
-    double initial_velocity5 = sqrt(gravitational_constant * sun.mass / distance5);
-    Vector2 initial_velocity_vector5 = Vector2{-initial_velocity5, 0};
-
-    planet earth = {Vector2{screenWidth/4, screenHeight/2}, 10, initial_velocity_vector, 5};
-    planet earth2 = {Vector2{screenWidth/4, screenHeight/4}, 30, initial_velocity_vector2, 8};
-    planet earth3 = {Vector2{3 * screenWidth/4, screenHeight/2}, 20, initial_velocity_vector3, 6};
-    planet earth4 = {Vector2{screenWidth/2, screenHeight/4}, 15, initial_velocity_vector4, 5};
-    planet earth5 = {Vector2{screenWidth/2, 3 * screenHeight/4}, 25, initial_velocity_vector5, 7};
-    planet bodies[N] = {sun, earth, earth2, earth3, earth4, earth5};
-    CircularBuffer positionHistory[N] = { CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100), CircularBuffer(100)};
-    Color bodyColors[N] = {
-        Color{255,255,0,255},
-        Color{0,255,150,255},
-        Color{150,150,255,255},
-        Color{255,140,0,255},
-        Color{180,255,180,255},
-        Color{255,180,220,255}
+    // Per-body initial conditions. The first entry is the sun (zero velocity), center of the system.
+    struct PlanetInit {
+        Vector2 position;
+        int mass;
+        int radius;
+        Vector2 velocityDir;
+        Color color;
     };
+    const PlanetInit inits[N] = {
+        {Vector2{screenWidth/2.0f,     screenHeight/2.0f},     10000, 15, Vector2{0,  0}, Color{255,255,0,255}},
+        {Vector2{screenWidth/4.0f,     screenHeight/2.0f},     10,    5,  Vector2{0, -1}, Color{0,255,150,255}},
+        {Vector2{screenWidth/4.0f,     screenHeight/4.0f},     30,    8,  Vector2{0, -1}, Color{150,150,255,255}},
+        {Vector2{3 * screenWidth/4.0f, screenHeight/2.0f},     20,    6,  Vector2{0,  1}, Color{255,140,0,255}},
+        {Vector2{screenWidth/2.0f,     screenHeight/4.0f},     15,    5,  Vector2{1,  0}, Color{180,255,180,255}},
+        {Vector2{screenWidth/2.0f,     3 * screenHeight/4.0f}, 25,    7,  Vector2{-1, 0}, Color{255,180,220,255}},
+    };
+
+    planet bodies[N];
+    Color bodyColors[N];
+    CircularBuffer positionHistory[N] = { CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100), CircularBuffer(100)};
+    for (int i = 0; i < N; i++) {
+        const PlanetInit& in = inits[i];
+        double distance = Vector2Distance(inits[0].position, in.position);
+        double speed = (distance > 0) ? sqrt(gravitational_constant * inits[0].mass / distance) : 0.0;
+        bodies[i] = planet{ in.position, in.mass, Vector2Scale(in.velocityDir, (float)speed), in.radius };
+        bodyColors[i] = in.color;
+    }
 
 
     double KE = 0;
