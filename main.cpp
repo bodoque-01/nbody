@@ -17,6 +17,13 @@ int main(void)
     const int screenWidth = 1520;
     const int screenHeight = 1080;
     const double gravitational_constant = 10000.;
+     // center of the screen, upper half)
+    const float startX = (float)screenWidth / 2.0f;
+    const float startY = (float)screenHeight / 3.0f;
+    const float goldenAngle = 2.39996f; 
+    const float particleRadius = 32.0f;
+    const float c = (particleRadius * 2) * 1.5f; 
+
 
     InitWindow(screenWidth, screenHeight, "Simple gravity");
 
@@ -24,32 +31,32 @@ int main(void)
 
     const int N = 6;
 
-    // Per-body initial conditions. The first entry is the sun (zero velocity), center of the system.
-    struct PlanetInit {
-        Vector2 position;
-        int mass;
-        int radius;
-        Vector2 velocityDir;
-        Color color;
-    };
-    const PlanetInit inits[N] = {
-        {Vector2{screenWidth/2.0f,     screenHeight/2.0f},     10000, 15, Vector2{0,  0}, Color{255,255,0,255}},
-        {Vector2{screenWidth/4.0f,     screenHeight/2.0f},     10,    5,  Vector2{0, -1}, Color{0,255,150,255}},
-        {Vector2{screenWidth/4.0f,     screenHeight/4.0f},     30,    8,  Vector2{0, -1}, Color{150,150,255,255}},
-        {Vector2{3 * screenWidth/4.0f, screenHeight/2.0f},     20,    6,  Vector2{0,  1}, Color{255,140,0,255}},
-        {Vector2{screenWidth/2.0f,     screenHeight/4.0f},     15,    5,  Vector2{1,  0}, Color{180,255,180,255}},
-        {Vector2{screenWidth/2.0f,     3 * screenHeight/4.0f}, 25,    7,  Vector2{-1, 0}, Color{255,180,220,255}},
-    };
-
     planet bodies[N];
     Color bodyColors[N];
     CircularBuffer positionHistory[N] = { CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100), CircularBuffer(100)};
-    for (int i = 0; i < N; i++) {
-        const PlanetInit& in = inits[i];
-        double distance = Vector2Distance(inits[0].position, in.position);
-        double speed = (distance > 0) ? sqrt(gravitational_constant * inits[0].mass / distance) : 0.0;
-        bodies[i] = planet{ in.position, in.mass, Vector2Scale(in.velocityDir, (float)speed), in.radius };
-        bodyColors[i] = in.color;
+
+    // Body 0 is the sun (zero velocity): the center of the system.
+    bodies[0]     = planet{ Vector2{screenWidth/2.0f, screenHeight/2.0f}, 10000, Vector2{0, 0}, 15 };
+    bodyColors[0] = Color{255, 255, 0, 255};
+
+    for (int i = 1; i < N; i++)
+    {
+        // This whole thing of the position is the golden angle distribution, which is a way to distribute points evenly in a circular pattern.
+        float theta = i * goldenAngle;
+        float r = c * sqrtf((float)i);
+
+        Vector2 position = {
+            startX + r * cosf(theta),
+            startY + r * sinf(theta)
+        };
+
+        // Perpendicular (tangential) launch velocity so the particle orbits the sun.
+        double distance = Vector2Distance(bodies[0].position, position);
+        double speed = (distance > 0) ? sqrt(gravitational_constant * bodies[0].mass / distance) : 0.0;
+        Vector2 velocity = Vector2Scale(Vector2{ -sinf(theta), cosf(theta) }, (float)speed);
+
+        bodies[i] = planet{ position, 500, velocity, 5 };
+        bodyColors[i] = WHITE;
     }
 
 
