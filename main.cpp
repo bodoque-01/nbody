@@ -14,7 +14,7 @@ int main(void)
 {
     bool isPaused = false;
     SetConfigFlags(FLAG_BORDERLESS_WINDOWED_MODE);
-    InitWindow(0, 0, "Simple gravity"); // 0,0 means "use the monitor's native resolution"
+    InitWindow(0, 0, "PETROVA LINE"); // 0,0 means "use the monitor's native resolution"
     const int screenWidth = 1520;
     const int screenHeight = 1080;
 
