@@ -39,7 +39,11 @@ int main(void)
         Color{255,255,0,255}, Color{0,255,150,255}, Color{150,150,255,255},
         Color{255,140,0,255}, Color{180,255,180,255}, Color{255,180,220,255},
     };
-    CircularBuffer positionHistory[N] = { CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100), CircularBuffer(100)};
+    std::vector<CircularBuffer> positionHistory;
+    positionHistory.reserve(N);
+    for (int i = 0; i < N; i++) {
+        positionHistory.emplace_back(100);
+    }
 
     // Turn each body's launch direction into an orbital speed around the sun.
     for (int i = 0; i < N; i++) {
