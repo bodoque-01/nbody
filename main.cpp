@@ -14,11 +14,12 @@ struct planet {
 int main(void)
 {
     bool isPaused = false;
-    const int screenWidth = 1520;
-    const int screenHeight = 1080;
     const double gravitational_constant = 10000.;
 
-    InitWindow(screenWidth, screenHeight, "Simple gravity");
+    SetConfigFlags(FLAG_BORDERLESS_WINDOWED_MODE);
+    InitWindow(0, 0, "Simple gravity"); // 0,0 means "use the monitor's native resolution"
+    const int screenWidth = GetScreenWidth();
+    const int screenHeight = GetScreenHeight();
 
     SetTargetFPS(60); // Set our game to run at 60 frames-per-second
 
