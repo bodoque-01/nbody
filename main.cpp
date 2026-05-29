@@ -14,18 +14,21 @@ struct planet {
 int main(void)
 {
     bool isPaused = false;
+    SetConfigFlags(FLAG_BORDERLESS_WINDOWED_MODE);
+    InitWindow(0, 0, "Simple gravity"); // 0,0 means "use the monitor's native resolution"
     const int screenWidth = 1520;
     const int screenHeight = 1080;
+
     const double gravitational_constant = 10000.;
+
      // center of the screen, upper half)
     const float startX = (float)screenWidth / 2.0f;
     const float startY = (float)screenHeight / 3.0f;
+    
     const float goldenAngle = 2.39996f; 
     const float particleRadius = 32.0f;
     const float c = (particleRadius * 2) * 1.5f; 
 
-
-    InitWindow(screenWidth, screenHeight, "Simple gravity");
 
     SetTargetFPS(60); // Set our game to run at 60 frames-per-second
 
