@@ -63,9 +63,6 @@ int main(void)
     }
 
 
-    double KE = 0;
-    double PE = 0;
-    double E = KE + PE;
     const float fixedDt = 1.0f / 240.0f;
     const int maxSubstepsPerFrame = 8;
     float accumulator = 0.0f;
@@ -121,12 +118,6 @@ int main(void)
             ClearBackground(BLACK);
             for (int i = 0; i < N; i++) {
                 DrawCircle(bodies[i].position.x, bodies[i].position.y, bodies[i].radius, bodyColors[i]);
-                DrawText(TextFormat("KE: %.2f", KE), 20, 20, 20, WHITE);
-                DrawText(TextFormat("PE: %.2f", PE), 20, 44, 20, WHITE);
-                DrawText(TextFormat("E:  %.2f", E),  20, 68, 20, YELLOW);
-            }
-            if (isPaused) {
-                DrawText("PAUSED", screenWidth/2, 20, 30, WHITE);
             }
 
         EndDrawing();
