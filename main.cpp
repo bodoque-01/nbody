@@ -2,7 +2,6 @@
 #include "raymath.h"
 #include <cmath>
 #include <omp.h>
-#include "circular_buffer.h"
 
 struct planet {
     Vector2 position;
@@ -19,34 +18,35 @@ int main(void)
     const int screenWidth = 1520;
     const int screenHeight = 1080;
 
-    const double gravitational_constant = 10000.;
+    const double gravitational_constant = 200.;
 
-     // center of the screen, upper half)
+     // center of the screen
     const float startX = (float)screenWidth / 2.0f;
-    const float startY = (float)screenHeight / 3.0f;
+    const float startY = (float)screenHeight / 2.0f;
     
     const float goldenAngle = 2.39996f; 
-    const float particleRadius = 32.0f;
-    const float c = (particleRadius * 2) * 1.5f; 
+    const float particleRadius = 5.0f;
+    const float c = (particleRadius * 2) * 1.5f;
+    const float innerRadius = 80.0f; // push the whole spiral out so inner particles don't crowd the center
 
 
     SetTargetFPS(60); // Set our game to run at 60 frames-per-second
 
-    const int N = 6;
+    const int N = 400;
 
     planet bodies[N];
     Color bodyColors[N];
-    CircularBuffer positionHistory[N] = { CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100), CircularBuffer(100)};
 
     // Body 0 is the sun (zero velocity): the center of the system.
-    bodies[0]     = planet{ Vector2{screenWidth/2.0f, screenHeight/2.0f}, 10000, Vector2{0, 0}, 15 };
+    bodies[0]     = planet{ Vector2{screenWidth/2.0f, screenHeight/2.0f}, 10000, Vector2{0, 0}, 8 };
     bodyColors[0] = Color{255, 255, 0, 255};
+
 
     for (int i = 1; i < N; i++)
     {
         // This whole thing of the position is the golden angle distribution, which is a way to distribute points evenly in a circular pattern.
         float theta = i * goldenAngle;
-        float r = c * sqrtf((float)i);
+        float r = innerRadius + c * sqrtf((float)i);
 
         Vector2 position = {
             startX + r * cosf(theta),
@@ -55,11 +55,11 @@ int main(void)
 
         // Perpendicular (tangential) launch velocity so the particle orbits the sun.
         double distance = Vector2Distance(bodies[0].position, position);
-        double speed = (distance > 0) ? sqrt(gravitational_constant * bodies[0].mass / distance) : 0.0;
+        double speed = sqrt(gravitational_constant * bodies[0].mass / distance);
         Vector2 velocity = Vector2Scale(Vector2{ -sinf(theta), cosf(theta) }, (float)speed);
 
-        bodies[i] = planet{ position, 500, velocity, 5 };
-        bodyColors[i] = WHITE;
+        bodies[i] = planet{ position, 5, velocity, 1 };
+        bodyColors[i] = ColorLerp(RED, PINK, GetRandomValue(0, 100) / 100.0f);
     }
 
 
@@ -85,15 +85,15 @@ int main(void)
 
             while (accumulator >= fixedDt && stepsTaken < maxSubstepsPerFrame) {
                 Vector2 accelerations[N] = {};
-                KE = 0;
-                PE = 0;
-                E = 0;
 
+
+
+                #pragma omp parallel for
                 for (int i = 0; i < N; i++) {
-                    for (int j = i + 1; j < N; j++) {
+                    for (int j = 0; j < N; j++) {
                         Vector2 r = Vector2Subtract(bodies[j].position, bodies[i].position);
                         float distSqr = Vector2LengthSqr(r);
-                        if (distSqr <= 0.0001f) continue;
+                        if (distSqr <= 0.25f) continue;
 
                         float dist = sqrtf(distSqr);
                         double forceMagnitude = (bodies[i].mass * bodies[j].mass * gravitational_constant) / distSqr;
@@ -101,18 +101,11 @@ int main(void)
                         Vector2 force = Vector2Scale(r_norm, (float)forceMagnitude);
 
                         Vector2 acceleration_i = Vector2Scale(force, 1.0f / (float)bodies[i].mass);
-                        Vector2 acceleration_j = Vector2Scale(force, -1.0f / (float)bodies[j].mass);
-
                         accelerations[i] = Vector2Add(accelerations[i], acceleration_i);
-                        accelerations[j] = Vector2Add(accelerations[j], acceleration_j);
-                        PE += (-gravitational_constant * bodies[i].mass * bodies[j].mass) / dist;
                     }
-                    KE += 0.5 * bodies[i].mass * pow(Vector2Length(bodies[i].velocity), 2);
                 }
-                E = KE + PE;
 
                 for (int i = 0; i < N; i++) {
-                    positionHistory[i].push(Vector2{bodies[i].position.x, bodies[i].position.y});
                     bodies[i].velocity = Vector2Add(bodies[i].velocity, Vector2Scale(accelerations[i], fixedDt));
                     bodies[i].position = Vector2Add(bodies[i].position, Vector2Scale(bodies[i].velocity, fixedDt));
                 }
@@ -128,10 +121,6 @@ int main(void)
             ClearBackground(BLACK);
             for (int i = 0; i < N; i++) {
                 DrawCircle(bodies[i].position.x, bodies[i].position.y, bodies[i].radius, bodyColors[i]);
-                for (std::size_t j = 0; j < positionHistory[i].size(); j++) {
-                    Vector2 pos = positionHistory[i].at(j);
-                    DrawPixel(pos.x, pos.y, bodyColors[i]);
-                }
                 DrawText(TextFormat("KE: %.2f", KE), 20, 20, 20, WHITE);
                 DrawText(TextFormat("PE: %.2f", PE), 20, 44, 20, WHITE);
                 DrawText(TextFormat("E:  %.2f", E),  20, 68, 20, YELLOW);
