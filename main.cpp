@@ -24,32 +24,27 @@ int main(void)
 
     const int N = 6;
 
-    // Per-body initial conditions. The first entry is the sun (zero velocity), center of the system.
-    struct PlanetInit {
-        Vector2 position;
-        int mass;
-        int radius;
-        Vector2 velocityDir;
-        Color color;
+    // Per-body initial conditions. Body 0 is the sun (zero velocity), center of the system.
+    // The velocity field starts as a unit launch direction; the loop below scales it to orbital speed.
+    planet bodies[N] = {
+        { Vector2{screenWidth/2.0f,     screenHeight/2.0f},     10000, Vector2{0,  0}, 15 },
+        { Vector2{screenWidth/4.0f,     screenHeight/2.0f},     10,    Vector2{0, -1}, 5  },
+        { Vector2{screenWidth/4.0f,     screenHeight/4.0f},     30,    Vector2{0, -1}, 8  },
+        { Vector2{3 * screenWidth/4.0f, screenHeight/2.0f},     20,    Vector2{0,  1}, 6  },
+        { Vector2{screenWidth/2.0f,     screenHeight/4.0f},     15,    Vector2{1,  0}, 5  },
+        { Vector2{screenWidth/2.0f,     3 * screenHeight/4.0f}, 25,    Vector2{-1, 0}, 7  },
     };
-    const PlanetInit inits[N] = {
-        {Vector2{screenWidth/2.0f,     screenHeight/2.0f},     10000, 15, Vector2{0,  0}, Color{255,255,0,255}},
-        {Vector2{screenWidth/4.0f,     screenHeight/2.0f},     10,    5,  Vector2{0, -1}, Color{0,255,150,255}},
-        {Vector2{screenWidth/4.0f,     screenHeight/4.0f},     30,    8,  Vector2{0, -1}, Color{150,150,255,255}},
-        {Vector2{3 * screenWidth/4.0f, screenHeight/2.0f},     20,    6,  Vector2{0,  1}, Color{255,140,0,255}},
-        {Vector2{screenWidth/2.0f,     screenHeight/4.0f},     15,    5,  Vector2{1,  0}, Color{180,255,180,255}},
-        {Vector2{screenWidth/2.0f,     3 * screenHeight/4.0f}, 25,    7,  Vector2{-1, 0}, Color{255,180,220,255}},
+    Color bodyColors[N] = {
+        Color{255,255,0,255}, Color{0,255,150,255}, Color{150,150,255,255},
+        Color{255,140,0,255}, Color{180,255,180,255}, Color{255,180,220,255},
     };
-
-    planet bodies[N];
-    Color bodyColors[N];
     CircularBuffer positionHistory[N] = { CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100),  CircularBuffer(100), CircularBuffer(100)};
+
+    // Turn each body's launch direction into an orbital speed around the sun.
     for (int i = 0; i < N; i++) {
-        const PlanetInit& in = inits[i];
-        double distance = Vector2Distance(inits[0].position, in.position);
-        double speed = (distance > 0) ? sqrt(gravitational_constant * inits[0].mass / distance) : 0.0;
-        bodies[i] = planet{ in.position, in.mass, Vector2Scale(in.velocityDir, (float)speed), in.radius };
-        bodyColors[i] = in.color;
+        double distance = Vector2Distance(bodies[0].position, bodies[i].position);
+        double speed = (distance > 0) ? sqrt(gravitational_constant * bodies[0].mass / distance) : 0.0;
+        bodies[i].velocity = Vector2Scale(bodies[i].velocity, (float)speed);
     }
 
 
