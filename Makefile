@@ -2,7 +2,7 @@ CXX := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -fopenmp
 LDFLAGS := -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -fopenmp
 TARGET := main
-SRC := main.cpp circular_buffer.cpp
+SRC := main.cpp
 WATCH_FILES := $(wildcard *.cpp *.h *.hpp)
 
 BENCH_CXXFLAGS := -std=c++17 -Wall -Wextra -O2 -DRAYMATH_STANDALONE
