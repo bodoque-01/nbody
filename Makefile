@@ -5,7 +5,11 @@ TARGET := main
 SRC := main.cpp circular_buffer.cpp
 WATCH_FILES := $(wildcard *.cpp *.h *.hpp)
 
-.PHONY: all build run clean watch watch-run
+BENCH_CXXFLAGS := -std=c++17 -Wall -Wextra -O2 -DRAYMATH_STANDALONE
+BENCH_SRC := benchmark.cpp
+
+.PHONY: all build run clean watch watch-run \
+	benchmark benchmark-serial benchmark-omp benchmark-compare
 
 all: build
 
@@ -15,8 +19,23 @@ build: $(SRC)
 run: build
 	./$(TARGET)
 
+benchmark-serial: $(BENCH_SRC)
+	$(CXX) $(BENCH_CXXFLAGS) $(BENCH_SRC) -lm -o benchmark-serial
+
+benchmark-omp: $(BENCH_SRC)
+	$(CXX) $(BENCH_CXXFLAGS) -fopenmp -DUSE_OPENMP $(BENCH_SRC) -lm -fopenmp -o benchmark-omp
+
+benchmark: benchmark-serial benchmark-omp
+
+benchmark-compare: benchmark
+	@echo "=== serial (no OpenMP) ==="
+	./benchmark-serial
+	@echo ""
+	@echo "=== OpenMP ==="
+	./benchmark-omp
+
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) benchmark benchmark-serial benchmark-omp
 
 watch:
 	@command -v inotifywait >/dev/null 2>&1 || { \

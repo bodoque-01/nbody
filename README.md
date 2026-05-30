@@ -1,10 +1,8 @@
 # Simple gravity
 
-A tiny N-body gravity simulation: a "sun" and five orbiting bodies, rendered
-with [raylib](https://www.raylib.com/). Each body's trail is drawn from a
-circular buffer, and live kinetic / potential / total energy is shown on screen.
+A N body simulation with several tiny particles, painted all in gradients of red/pink in honor of the Petrova Line from Project Hail Mary.
+They orbit a comparatively massive body in the center. 
 
-TODO: Add openMP to handle computations in parallel.
 ## Quick start
 
 On a desktop Linux machine with a graphical display:
@@ -40,12 +38,13 @@ Once dependencies are installed, you don't need `setup.sh` anymore:
 make run     # build (if needed) and run
 make build   # just build
 make clean   # remove the binary
+make benchmark-compare # Runs benchmarking comparing a simple run of the heavy physics for loop without OpenMP (single-threaded) and one with OpenMP parallelization.
 ```
 
 ## Requirements
 
 - A desktop Linux environment with OpenGL and an X11 display.
-- A C++17 compiler (`g++`), `make`, and `raylib`, all handled by `setup.sh`.
+- A C++17 compiler (`g++`), `make`, and `raylib`, all (HOPEFULLY LOL) handled by `setup.sh`.
 
 ## Manual install
 

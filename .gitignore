@@ -1,4 +1,7 @@
 main
+benchmark
+benchmark-serial
+benchmark-omp
 
 # Editor / IntelliSense tooling (local only)
 .vscode/
