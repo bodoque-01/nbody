@@ -8,7 +8,7 @@
 //   make benchmark-serial   # plain loops, no OpenMP runtime
 //   make benchmark-omp      # -fopenmp, parallel force loop
 //   make benchmark-compare  # run both and print results
-#include "raymath.h"
+#include "config.h"
 #include <cmath>
 #include <chrono>
 #include <cstdio>
@@ -18,29 +18,9 @@
 #include <omp.h>
 #endif
 
-struct planet {
-    Vector2 position;
-    int mass;
-    Vector2 velocity;
-    int radius;
-};
-
 static void initBodies(std::vector<planet>& bodies, int N) {
-    const int screenWidth = 1520;
-    const int screenHeight = 1080;
-    const double gravitational_constant = 200.0;
-    const float goldenAngle = 2.39996f;
-    const float particleRadius = 5.0f;
-    const float c = (particleRadius * 2) * 1.5f;
-    const float innerRadius = 80.0f;
-    const float startX = (float)screenWidth / 2.0f;
-    const float startY = (float)screenHeight / 2.0f;
-
     bodies.assign(N, planet{});
-    bodies[0] = planet{
-        Vector2{(float)screenWidth / 2.0f, (float)screenHeight / 2.0f},
-        10000, Vector2{0, 0}, 8
-    };
+    bodies[0] = planet{Vector2{startX, startY}, sunMass, Vector2{0, 0}, sunRadius};
     for (int i = 1; i < N; i++) {
         float theta = i * goldenAngle;
         float r = innerRadius + c * sqrtf((float)i);
@@ -48,12 +28,11 @@ static void initBodies(std::vector<planet>& bodies, int N) {
         double distance = Vector2Distance(bodies[0].position, position);
         double speed = sqrt(gravitational_constant * bodies[0].mass / distance);
         Vector2 velocity = Vector2Scale(Vector2{-sinf(theta), cosf(theta)}, (float)speed);
-        bodies[i] = planet{position, 5, velocity, 1};
+        bodies[i] = planet{position, planetMass, velocity, planetRadius};
     }
 }
 
-static void step(std::vector<planet>& bodies, std::vector<Vector2>& acc, int N,
-                 double gravitational_constant, float dt) {
+static void step(std::vector<planet>& bodies, std::vector<Vector2>& acc, int N) {
     for (int i = 0; i < N; i++) acc[i] = Vector2{0, 0};
 
 #ifdef USE_OPENMP
@@ -76,14 +55,12 @@ static void step(std::vector<planet>& bodies, std::vector<Vector2>& acc, int N,
     }
 
     for (int i = 0; i < N; i++) {
-        bodies[i].velocity = Vector2Add(bodies[i].velocity, Vector2Scale(acc[i], dt));
-        bodies[i].position = Vector2Add(bodies[i].position, Vector2Scale(bodies[i].velocity, dt));
+        bodies[i].velocity = Vector2Add(bodies[i].velocity, Vector2Scale(acc[i], simulationDt));
+        bodies[i].position = Vector2Add(bodies[i].position, Vector2Scale(bodies[i].velocity, simulationDt));
     }
 }
 
 int main(void) {
-    const double gravitational_constant = 200.0;
-    const float dt = 1.0f / 240.0f;
     const int steps = 2000;
     const int Ns[] = {100, 250, 500, 1000, 2000};
 
@@ -99,11 +76,11 @@ int main(void) {
         initBodies(bodies, N);
         std::vector<Vector2> acc(N);
 
-        step(bodies, acc, N, gravitational_constant, dt);
+        step(bodies, acc, N);
 
         auto t0 = std::chrono::steady_clock::now();
         for (int s = 0; s < steps; s++) {
-            step(bodies, acc, N, gravitational_constant, dt);
+            step(bodies, acc, N);
         }
         auto t1 = std::chrono::steady_clock::now();
 

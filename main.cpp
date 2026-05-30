@@ -1,34 +1,14 @@
 #include "raylib.h"
 #include "raymath.h"
+#include "config.h"
 #include <cmath>
 #include <omp.h>
 
-struct planet {
-    Vector2 position;
-    int mass;
-    Vector2 velocity;
-    int radius;
-};
- 
 int main(void)
 {
     bool isPaused = false;
     SetConfigFlags(FLAG_BORDERLESS_WINDOWED_MODE);
     InitWindow(0, 0, "PETROVA LINE"); // 0,0 means "use the monitor's native resolution"
-    const int screenWidth = 1520;
-    const int screenHeight = 1080;
-
-    const double gravitational_constant = 200.;
-
-     // center of the screen
-    const float startX = (float)screenWidth / 2.0f;
-    const float startY = (float)screenHeight / 2.0f;
-    
-    const float goldenAngle = 2.39996f; 
-    const float particleRadius = 5.0f;
-    const float c = (particleRadius * 2) * 1.5f;
-    const float innerRadius = 80.0f; // push the whole spiral out so inner particles don't crowd the center
-
 
     SetTargetFPS(60); // Set our game to run at 60 frames-per-second
 
@@ -38,7 +18,7 @@ int main(void)
     Color bodyColors[N];
 
     // Body 0 is the sun (zero velocity): the center of the system.
-    bodies[0]     = planet{ Vector2{screenWidth/2.0f, screenHeight/2.0f}, 10000, Vector2{0, 0}, 8 };
+    bodies[0]     = planet{ Vector2{startX, startY}, sunMass, Vector2{0, 0}, sunRadius };
     bodyColors[0] = Color{255, 255, 0, 255};
 
 
@@ -58,12 +38,11 @@ int main(void)
         double speed = sqrt(gravitational_constant * bodies[0].mass / distance);
         Vector2 velocity = Vector2Scale(Vector2{ -sinf(theta), cosf(theta) }, (float)speed);
 
-        bodies[i] = planet{ position, 5, velocity, 1 };
+        bodies[i] = planet{ position, planetMass, velocity, planetRadius };
         bodyColors[i] = ColorLerp(RED, PINK, GetRandomValue(0, 100) / 100.0f);
     }
 
 
-    const float fixedDt = 1.0f / 240.0f;
     const int maxSubstepsPerFrame = 8;
     float accumulator = 0.0f;
     // Main game loop
@@ -80,7 +59,7 @@ int main(void)
             accumulator += GetFrameTime();
             int stepsTaken = 0;
 
-            while (accumulator >= fixedDt && stepsTaken < maxSubstepsPerFrame) {
+            while (accumulator >= simulationDt && stepsTaken < maxSubstepsPerFrame) {
                 Vector2 accelerations[N] = {};
 
 
@@ -103,11 +82,11 @@ int main(void)
                 }
 
                 for (int i = 0; i < N; i++) {
-                    bodies[i].velocity = Vector2Add(bodies[i].velocity, Vector2Scale(accelerations[i], fixedDt));
-                    bodies[i].position = Vector2Add(bodies[i].position, Vector2Scale(bodies[i].velocity, fixedDt));
+                    bodies[i].velocity = Vector2Add(bodies[i].velocity, Vector2Scale(accelerations[i], simulationDt));
+                    bodies[i].position = Vector2Add(bodies[i].position, Vector2Scale(bodies[i].velocity, simulationDt));
                 }
 
-                accumulator -= fixedDt;
+                accumulator -= simulationDt;
                 stepsTaken++;
             }
         }
