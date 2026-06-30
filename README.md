@@ -54,7 +54,5 @@ If you'd rather install raylib yourself instead of running `setup.sh`:
 |-------------------|----------------------------------------------------------|
 | Debian / Ubuntu   | `sudo apt install build-essential libraylib-dev`         |
 | Fedora / RHEL     | `sudo dnf install gcc-c++ make raylib-devel`             |
-| Arch              | `sudo pacman -S base-devel raylib`                       |
-| openSUSE          | `sudo zypper install gcc-c++ make raylib-devel`          |
 
 Then build and run with `make run`.
