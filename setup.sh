@@ -3,9 +3,8 @@
 # One-shot setup for the "Simple gravity" demo.
 #
 # Installs a C++ toolchain and raylib, builds the program, and runs it.
-# Works on Debian/Ubuntu (apt), Fedora/RHEL (dnf), Arch (pacman) and
-# openSUSE (zypper). If your distro doesn't package raylib, it is built
-# from source automatically.
+# Works on Debian/Ubuntu (apt) and Fedora/RHEL (dnf). If your distro doesn't
+# package a new enough raylib, it is built from source automatically.
 #
 # Usage:
 #   ./setup.sh          # install deps, build, and run
@@ -55,7 +54,7 @@ raylib_available() {
 
 # Detect the package manager.
 PM=""
-for candidate in apt-get dnf pacman zypper; do
+for candidate in apt-get dnf; do
     if command -v "$candidate" >/dev/null 2>&1; then
         PM="$candidate"
         break
@@ -63,7 +62,7 @@ for candidate in apt-get dnf pacman zypper; do
 done
 
 if [ -z "$PM" ]; then
-    echo "Could not detect a supported package manager (apt/dnf/pacman/zypper)." >&2
+    echo "Could not detect a supported package manager (apt or dnf)." >&2
     echo "Please install a C++ compiler, make, and raylib manually, then run: make run" >&2
     exit 1
 fi
@@ -83,17 +82,6 @@ case "$PM" in
         echo ">> Trying to install raylib from dnf..."
         as_root dnf install -y raylib-devel || true
         ;;
-    pacman)
-        as_root pacman -Sy --noconfirm --needed base-devel pkgconf
-        echo ">> Trying to install raylib from pacman..."
-        as_root pacman -S --noconfirm --needed raylib || true
-        ;;
-    zypper)
-        as_root zypper install -y -t pattern devel_C_C++ || true
-        as_root zypper install -y gcc-c++ make pkg-config
-        echo ">> Trying to install raylib from zypper..."
-        as_root zypper install -y raylib-devel || true
-        ;;
 esac
 
 # If the distro didn't provide raylib, build it from source.
@@ -105,10 +93,6 @@ if ! raylib_available; then
         apt-get) as_root apt-get install -y git cmake libgl1-mesa-dev libx11-dev \
                      libxrandr-dev libxi-dev libxcursor-dev libxinerama-dev ;;
         dnf)     as_root dnf install -y git cmake mesa-libGL-devel libX11-devel \
-                     libXrandr-devel libXi-devel libXcursor-devel libXinerama-devel ;;
-        pacman)  as_root pacman -S --noconfirm --needed git cmake mesa libx11 \
-                     libxrandr libxi libxcursor libxinerama ;;
-        zypper)  as_root zypper install -y git cmake Mesa-libGL-devel libX11-devel \
                      libXrandr-devel libXi-devel libXcursor-devel libXinerama-devel ;;
     esac
 

@@ -3,6 +3,9 @@ benchmark
 benchmark-serial
 benchmark-omp
 
+# CMake out-of-source build directory
+build/
+
 # Editor / IntelliSense tooling (local only)
 .vscode/
 .clangd

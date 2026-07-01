@@ -1,3 +1,13 @@
+# Local development build.
+#
+# This is the fast iteration loop: it builds against a raylib that's already
+# installed on your system (via setup.sh, or your distro's package), so there's
+# no per-build raylib fetch/compile. It also has `watch`/`watch-run` for
+# auto-rebuilding on save.
+#
+# For a portable, self-contained build that needs no system raylib, use CMake
+# instead (see the README).
+
 CXX := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -fopenmp
 LDFLAGS := -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -fopenmp
