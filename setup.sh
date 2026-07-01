@@ -32,13 +32,23 @@ as_root() {
     fi
 }
 
-# True if raylib's headers/library are already discoverable.
+# True if raylib >= 5.0 is already discoverable. This program uses APIs added in
+# raylib 5.0 (ColorLerp, FLAG_BORDERLESS_WINDOWED_MODE), so an older packaged
+# raylib (e.g. Ubuntu 24.04's 4.5.0) must be treated as "not available" so we
+# fall through and build a new enough one from source.
 raylib_available() {
-    if command -v pkg-config >/dev/null 2>&1 && pkg-config --exists raylib; then
+    if command -v pkg-config >/dev/null 2>&1 && \
+       pkg-config --atleast-version=5.0 raylib; then
         return 0
     fi
     for inc in /usr/include/raylib.h /usr/local/include/raylib.h; do
-        [ -f "$inc" ] && return 0
+        # RAYLIB_VERSION_MAJOR was introduced in 5.0; if it's missing or < 5,
+        # the header is too old (or too old to advertise its version).
+        if [ -f "$inc" ] && \
+           awk '/define RAYLIB_VERSION_MAJOR/ { found=1; if ($3 + 0 >= 5) ok=1 }
+                END { exit ok ? 0 : 1 }' "$inc"; then
+            return 0
+        fi
     done
     return 1
 }
