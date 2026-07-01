@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.14)
+# 3.24+ is required for FetchContent's FIND_PACKAGE_ARGS (reuse a system raylib).
+cmake_minimum_required(VERSION 3.24)
 project(simple_gravity CXX)
 
 # Portable, self-contained build: raylib is fetched and built from source at a
@@ -21,15 +22,22 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
 endif()
 
-# ---- raylib (built from source, pinned) ----
+# ---- raylib ----
+# Reuse a system-installed raylib when one that's new enough is present
+# (FIND_PACKAGE_ARGS runs find_package(raylib 5.0) first); otherwise download and
+# build a pinned version from source. The 5.0 floor means an old system package
+# like Ubuntu 24.04's raylib 4.5.0 is rejected and we fetch instead, while a
+# recent one (e.g. Fedora's) is used as-is with no download. Nothing is installed
+# globally either way.
 include(FetchContent)
-set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)   # don't build raylib's examples
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)   # if built from source, skip examples
 set(BUILD_GAMES    OFF CACHE BOOL "" FORCE)
+set(RAYLIB_DOWNLOAD_VERSION 6.0)
 FetchContent_Declare(
     raylib
-    GIT_REPOSITORY https://github.com/raysan5/raylib.git
-    GIT_TAG        6.0
-    GIT_SHALLOW    TRUE
+    URL https://github.com/raysan5/raylib/archive/refs/tags/${RAYLIB_DOWNLOAD_VERSION}.tar.gz
+    DOWNLOAD_EXTRACT_TIMESTAMP OFF
+    FIND_PACKAGE_ARGS 5.0
 )
 FetchContent_MakeAvailable(raylib)
 
@@ -46,15 +54,19 @@ add_custom_target(run COMMAND main DEPENDS main USES_TERMINAL)
 # ---- benchmarks ----
 # Two separate binaries so the OpenMP runtime overhead doesn't taint the
 # single-threaded timing (see benchmark.cpp). raymath is used header-only in
-# standalone mode, so these don't link raylib; they just need its include dir.
+# standalone mode, so these don't link raylib; they just borrow its include dir.
+# Pull that from the raylib target itself so it works whether raylib was fetched
+# or found as a system package.
+set(RAYLIB_INCLUDES $<TARGET_PROPERTY:raylib,INTERFACE_INCLUDE_DIRECTORIES>)
+
 add_executable(benchmark-serial benchmark.cpp)
 target_compile_definitions(benchmark-serial PRIVATE RAYMATH_STANDALONE)
-target_include_directories(benchmark-serial PRIVATE ${raylib_SOURCE_DIR}/src)
+target_include_directories(benchmark-serial PRIVATE ${RAYLIB_INCLUDES})
 target_link_libraries(benchmark-serial PRIVATE m)
 
 add_executable(benchmark-omp benchmark.cpp)
 target_compile_definitions(benchmark-omp PRIVATE RAYMATH_STANDALONE USE_OPENMP)
-target_include_directories(benchmark-omp PRIVATE ${raylib_SOURCE_DIR}/src)
+target_include_directories(benchmark-omp PRIVATE ${RAYLIB_INCLUDES})
 target_link_libraries(benchmark-omp PRIVATE m OpenMP::OpenMP_CXX)
 
 # `cmake --build build --target benchmark-compare`
